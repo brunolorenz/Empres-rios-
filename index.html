@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Empresários e suas empresas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#15181d;--mut:#5d636d;--line:#d9dce1;--d:#2a78d6;--i:#1baf7a;--n:#9b9b95;--warn:#8a5a00;--warnbg:#fdf0d5;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121417;--card:#1b1e23;--ink:#f0efec;--mut:#a6abb3;--line:#33373d;--d:#3987e5;--i:#199e70;--n:#8a8a85;--warn:#f2c36b;--warnbg:#3a2d10}}
+:root[data-theme="dark"]{--bg:#121417;--card:#1b1e23;--ink:#f0efec;--mut:#a6abb3;--line:#33373d;--d:#3987e5;--i:#199e70;--n:#8a8a85;--warn:#f2c36b;--warnbg:#3a2d10}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:560px;margin:0 auto;padding:20px 16px 8px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:14px;margin:0 0 16px}
+input[type=search]{width:100%;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
+input[type=search]:focus-visible,button:focus-visible{outline:2px solid var(--d);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 14px}
+.chip{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--card);border-color:var(--ink)}
+.sq{width:10px;height:10px;border-radius:2px;display:inline-block}
+.k-d{background:var(--d);fill:var(--d);stroke:var(--d)}.k-i{background:var(--i);fill:var(--i);stroke:var(--i)}.k-n{background:var(--n);fill:var(--n);stroke:var(--n)}
+.cols{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);padding:0 4px 4px}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:inherit;font-size:12px;fill:var(--ink)}
+svg .co text{fill:var(--ink)}
+.node{cursor:pointer;transition:opacity .15s}
+.link{fill:none;stroke-width:1.2;transition:opacity .15s}
+.sel text{font-weight:500}
+.foot{color:var(--mut);font-size:12px;margin:14px 0 0;line-height:1.5}
+#sheet{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));max-height:42vh;overflow:auto;margin-top:12px}
+#sheet .in{max-width:560px;margin:0 auto}
+#sheet h2{font-size:17px;font-weight:500;margin:0}
+.meta{color:var(--mut);font-size:13px;margin:2px 0 8px}
+.lbl{color:var(--mut);font-size:12px;margin:8px 0 4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
+.warn{display:inline-block;background:var(--warnbg);color:var(--warn);border-radius:6px;padding:2px 8px;font-size:12px;margin-top:6px}
+.empty{color:var(--mut);font-size:14px;margin:0}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+@media (prefers-reduced-motion:reduce){.node,.link{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Empresários e suas empresas</h1>
+  <p class="sub" id="sub"></p>
+  <input type="search" id="q" placeholder="Buscar nome ou empresa" aria-label="Buscar nome ou empresa" autocomplete="off">
+  <div class="chips" id="chips" role="group" aria-label="Filtrar por presença de marca ao consumidor"></div>
+  <div class="cols"><span>Pessoas</span><span>Empresas</span></div>
+  <svg id="svg" role="img" aria-label="Ligações entre empresários e as empresas onde atuam"></svg>
+  <p class="foot">Fonte dos nomes: matéria da revista piauí. Cargos e empresas levantados em out/2026; itens com aviso pedem checagem antes de uso. Direto: marcas vendidas ao consumidor ou ao varejo. Indireto: banco, mídia, serviços. Sem marca: sem marca de consumo relevante.</p>
+</main>
+<div id="sheet" aria-live="polite"><div class="in" id="detail"></div></div>
+<script>
+var CATS={d:"Direto",i:"Indireto",n:"Sem marca"};
+var P=[
+["Flávio Rocha","d","Ex-CEO e acionista (família controladora). Varejo de moda",["Grupo Guararapes"],"Riachuelo, Casa Riachuelo, Midway (financeira)",""],
+["Marcelo Kayath","n","Ex-executivo de banco de investimento. Mercado financeiro",["Credit Suisse Brasil"],"—","Conferir cargo atual"],
+["André Esteves","i","Sócio sênior e presidente do conselho. Banco de investimentos",["BTG Pactual","Banco Pan"],"BTG Pactual, Banco Pan",""],
+["Eduardo Bartolomeo","n","Ex-CEO (2019–2024). Mineração",["Vale"],"—","Conferir cargo atual"],
+["Eduardo Fischer","i","Fundador. Publicidade",["Grupo Fischer","Totalcom"],"Agência Fischer",""],
+["David Feffer","d","Presidente do conselho (família controladora). Papel e celulose",["Suzano"],"Report (papel A4), Mimmo (papel higiênico)","Conferir portfólio atual de papéis tissue"],
+["Roberto Campos Neto","i","Ex-presidente do Banco Central; vice-chairman do Nubank desde jul/2025. Mercado financeiro",["Nubank","Santander Brasil"],"Nubank",""],
+["Fernando Marques","d","Fundador e presidente. Indústria farmacêutica",["União Química","Agener"],"—","Conferir marcas de varejo farmacêutico"],
+["Rubens Ometto","d","Presidente do conselho e controlador. Energia e infraestrutura",["Cosan","Raízen","Rumo","Compass/Comgás","Moove"],"Postos Shell, Shell Select, Comgás, lubrificantes Mobil (Moove)",""],
+["Emmanuel Hermann","n","Fundador e CEO; ex-sócio do BTG. Mercado financeiro",["Grupo Leste"],"—",""],
+["Paulo Skaf","n","Presidente da Fiesp. Indústria",["Fiesp"],"—","Conferir empresas atuais"],
+["Luiz Carlos Trabuco","i","Presidente do conselho. Setor bancário",["Bradesco","Bradesco Seguros"],"Bradesco, Next",""],
+["Fábio Barbosa","d","Ex-CEO da Natura &Co (2022–2024); ex-presidente do Santander Brasil e do Grupo Abril",["Natura &Co","Santander Brasil","Grupo Abril"],"Natura, Avon (na época)",""],
+["Alexandre Ostrowiecki","d","Cofundador e co-CEO. Eletrônicos",["Grupo Multi"],"Multilaser, Multi",""],
+["Mario Araripe","n","Fundador. Energia renovável",["Casa dos Ventos"],"—",""],
+["Milton Maluhy Filho","i","CEO. Setor bancário",["Itaú Unibanco"],"Itaú, Itaucard, Credicard",""],
+["Helio Seibel","d","Acionista e conselheiro (família Seibel). Madeira e materiais de construção",["Dexco","Leo Madeiras"],"Deca, Hydra, Portinari, Durafloor, Ceusa, Leo Madeiras",""],
+["Christian Egan","n","CEO da B3 (nomeado em mai/2026); ex-Santander, Itaú e Credit Suisse. Mercado de capitais",["B3"],"—",""],
+["Roberto Dagnoni","i","Executivo de topo. Criptomoedas",["Mercado Bitcoin"],"Mercado Bitcoin","Conferir cargo atual"],
+["Pedro Parente","d","Ex-presidente da Petrobras; ex-presidente do conselho da BRF; ex-CEO da Bunge Brasil",["Petrobras","BRF","Bunge"],"Sadia, Perdigão (BRF); Soya, Delícia (Bunge)","Ligações com consumo são passadas"],
+["Daniel Goldberg","n","Fundador; ex-Morgan Stanley Brasil. Investimentos",["Lumina Capital"],"—",""],
+["Fábio Ermírio de Moraes","i","Família controladora. Indústria e investimentos",["Grupo Votorantim"],"Votoran (cimento), banco BV",""],
+["Fabio Carvalho","d","Dono do Grupo Abril desde 2019; investidor em empresas em crise. Varejo e mídia",["Grupo Abril","Lojas Leader","Casa & Vídeo","Total Express"],"Veja, Exame, Claudia, Casa Cor, Leader, Casa & Vídeo","Conferir se ainda detém Leader e Casa & Vídeo"],
+["Richard Gerdau","n","Família controladora. Siderurgia",["Gerdau"],"—",""],
+["Gilson Finkelsztain","i","Ex-CEO da B3 (2017–2026); assumiu o comando do Santander Brasil em 2026",["Santander Brasil","B3"],"Santander",""],
+["José Galló","d","Ex-CEO e ex-presidente do conselho. Varejo",["Lojas Renner"],"Renner, Camicado, Youcom, Realize",""],
+["Fernando Simões","d","Controlador e presidente do conselho. Logística e infraestrutura",["Simpar"],"Movida, concessionárias Automob (grupo: JSL, Movida, Vamos, Automob)",""],
+["João Camargo","n","Fundador e presidente. Articulação empresarial",["Esfera Brasil"],"—","Conferir empresas próprias"]
+];
+var C=[],cp=[];
+P.forEach(function(p,i){p[3].forEach(function(c){var j=C.indexOf(c);if(j<0){C.push(c);cp.push([]);j=C.length-1}cp[j].push(i)})});
+var W=360,TOP=10,PS=30,H=TOP*2+P.length*PS,CS=(P.length*PS)/C.length;
+var py=function(i){return TOP+i*PS+PS/2},cy=function(j){return TOP+j*CS+CS/2};
+var cat=null,q="",sel=null;
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+$("sub").textContent=P.length+" empresários · "+C.length+" empresas · "+C.filter(function(c,j){return cp[j].length>1}).length+" empresas ligam mais de uma pessoa";
+function chips(){
+  var h='<button class="chip" data-c="" aria-pressed="'+(cat===null)+'">Todos</button>';
+  Object.keys(CATS).forEach(function(k){h+='<button class="chip" data-c="'+k+'" aria-pressed="'+(cat===k)+'"><span class="sq k-'+k+'"></span>'+CATS[k]+'</button>'});
+  $("chips").innerHTML=h;
+}
+function pOK(i){
+  var p=P[i];if(cat&&p[1]!==cat)return false;
+  if(!q)return true;
+  return p[0].toLowerCase().indexOf(q)>-1||p[3].some(function(c){return c.toLowerCase().indexOf(q)>-1});
+}
+function draw(){
+  var vp=P.map(function(_,i){return pOK(i)});
+  var vc=C.map(function(_,j){return cp[j].some(function(i){return vp[i]})});
+  var rp={},rc={};
+  if(sel&&sel.t==="p"){rp[sel.i]=1;P[sel.i][3].forEach(function(c){var j=C.indexOf(c);rc[j]=1;cp[j].forEach(function(i){rp[i]=1})})}
+  if(sel&&sel.t==="c"){rc[sel.i]=1;cp[sel.i].forEach(function(i){rp[i]=1})}
+  var s='';
+  P.forEach(function(p,i){p[3].forEach(function(c){
+    var j=C.indexOf(c),on=false;
+    if(sel&&sel.t==="p")on=(i===sel.i)||(rc[j]&&P[sel.i][3].indexOf(c)>-1);
+    if(sel&&sel.t==="c")on=(j===sel.i);
+    var vis=vp[i]&&vc[j];
+    var op=!vis?.04:(sel?(on?.9:.06):.22);
+    s+='<path class="link k-'+p[1]+'" style="opacity:'+op+'" d="M140,'+py(i)+' C182,'+py(i)+' 178,'+cy(j)+' 220,'+cy(j)+'"/>';
+  })});
+  P.forEach(function(p,i){
+    var op=!vp[i]?.25:(sel&&!rp[i]?.3:1);
+    s+='<g class="node'+(sel&&sel.t==="p"&&sel.i===i?' sel':'')+'" data-p="'+i+'" style="opacity:'+op+'" tabindex="0" role="button" aria-label="'+esc(p[0])+'"><rect x="0" y="'+(py(i)-PS/2)+'" width="150" height="'+PS+'" fill="transparent"/><text x="128" y="'+(py(i)+4)+'" text-anchor="end">'+esc(p[0])+'</text><circle cx="140" cy="'+py(i)+'" r="'+(sel&&sel.t==="p"&&sel.i===i?6:4.5)+'" class="k-'+p[1]+'"/></g>';
+  });
+  C.forEach(function(c,j){
+    var shared=cp[j].length>1;
+    var op=!vc[j]?.25:(sel&&!rc[j]?.3:1);
+    s+='<g class="node co'+(sel&&sel.t==="c"&&sel.i===j?' sel':'')+'" data-c="'+j+'" style="opacity:'+op+'" tabindex="0" role="button" aria-label="'+esc(c)+'"><rect x="210" y="'+(cy(j)-Math.max(CS,18)/2)+'" width="150" height="'+Math.max(CS,18)+'" fill="transparent"/><rect x="216" y="'+(cy(j)-4)+'" width="8" height="8" rx="2" style="fill:'+(shared?'var(--ink)':'var(--mut)')+'"/><text x="232" y="'+(cy(j)+4)+'">'+esc(c)+'</text></g>';
+  });
+  $("svg").setAttribute("viewBox","0 0 "+W+" "+H);
+  $("svg").innerHTML=s;
+  detail();
+}
+function tagP(i){return '<button class="tag" data-p="'+i+'"><span class="dot k-'+P[i][1]+'"></span>'+esc(P[i][0])+'</button>'}
+function tagC(j){return '<button class="tag" data-c="'+j+'">'+esc(C[j])+'</button>'}
+function detail(){
+  var d=$("detail");
+  if(!sel){d.innerHTML='<p class="empty">Toque em uma pessoa ou empresa para ver as ligações. Quadrados escuros à direita são empresas que aparecem em mais de um nome.</p>';return}
+  var h='';
+  if(sel.t==="p"){
+    var p=P[sel.i];
+    h='<h2><span class="dot k-'+p[1]+'"></span>'+esc(p[0])+'</h2><p class="meta">'+esc(p[2])+'</p>';
+    h+='<div class="lbl">Empresas</div><div class="tags">'+p[3].map(function(c){return tagC(C.indexOf(c))}).join('')+'</div>';
+    if(p[4]&&p[4]!=="—")h+='<div class="lbl">Marcas conhecidas</div><div>'+esc(p[4])+'</div>';
+    var sh={};p[3].forEach(function(c){cp[C.indexOf(c)].forEach(function(i){if(i!==sel.i)sh[i]=1})});
+    var ks=Object.keys(sh);
+    if(ks.length)h+='<div class="lbl">Divide empresa com</div><div class="tags">'+ks.map(function(i){return tagP(+i)}).join('')+'</div>';
+    if(p[5])h+='<span class="warn">'+esc(p[5])+'</span>';
+  }else{
+    h='<h2>'+esc(C[sel.i])+'</h2><p class="meta">'+cp[sel.i].length+(cp[sel.i].length>1?' pessoas ligadas':' pessoa ligada')+'</p>';
+    h+='<div class="lbl">Pessoas</div><div class="tags">'+cp[sel.i].map(tagP).join('')+'</div>';
+  }
+  d.innerHTML=h;
+}
+function pick(t,i){sel=(sel&&sel.t===t&&sel.i===i)?null:{t:t,i:i};draw()}
+$("svg").addEventListener("click",function(e){
+  var n=e.target.closest(".node");if(!n)return;
+  if(n.dataset.p!==undefined)pick("p",+n.dataset.p);else pick("c",+n.dataset.c);
+});
+$("svg").addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var n=e.target.closest(".node");if(!n)return;e.preventDefault();
+  if(n.dataset.p!==undefined)pick("p",+n.dataset.p);else pick("c",+n.dataset.c);
+});
+$("detail").addEventListener("click",function(e){
+  var b=e.target.closest(".tag");if(!b)return;
+  sel=b.dataset.p!==undefined?{t:"p",i:+b.dataset.p}:{t:"c",i:+b.dataset.c};draw();
+});
+$("chips").addEventListener("click",function(e){
+  var b=e.target.closest(".chip");if(!b)return;
+  cat=b.dataset.c||null;chips();draw();
+});
+$("q").addEventListener("input",function(e){q=e.target.value.trim().toLowerCase();draw()});
+chips();draw();
+</script>
+</body>
+</html>
